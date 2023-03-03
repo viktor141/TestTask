@@ -1,0 +1,46 @@
+plugins{
+    id 'java'
+    id 'application'
+}
+
+
+mainClassName = 'org.example.Main'
+
+group 'org.example'
+version '1.0-SNAPSHOT'
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.apache.httpcomponents:httpclient:4.5.12'
+}
+
+project.configurations.implementation.setCanBeResolved(true)
+
+task fatJar(type: Jar) {
+    manifest {attributes 'Main-Class': mainClassName}
+    from {
+        configurations.implementation.collect
+                { it.isDirectory() ? it : zipTree(it) }
+    }with jar
+}
+
+def dependsDir = "${buildDir}/libs/dependencies/"
+task copyDependencies(type: Copy) {
+    from configurations.implementation
+    into "${dependsDir}"
+}
+
+task createJar(dependsOn: copyDependencies, type: Jar) {
+    manifest {
+        attributes(
+                'Main-Class': mainClassName,
+                'Class-Path': configurations.implementation.collect
+                { 'dependencies/' + it.getName() }.join(' ')
+        )}
+    with jar
+}
+
